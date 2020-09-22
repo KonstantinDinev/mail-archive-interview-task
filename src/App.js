@@ -2,6 +2,8 @@ import React from "react";
 import TextField from "@material-ui/core/TextField";
 import InputAdornment from '@material-ui/core/InputAdornment';
 
+import moment from 'moment';
+
 import CalendarIcon from './assets/icon_calendar.svg';
 import SearchIcon from './assets/icon_search.svg';
 import LogoIcon from './assets/logo.png';
@@ -66,6 +68,7 @@ const useStyles = makeStyles((theme) => ({
 export default function BasicDateRangePicker() {
   const [selectedDate, setDateChange] = React.useState([new Date(), new Date()]);
   const [data, setData] = React.useState([]);
+  const [dataFilteredByDate, setFilteredData] = React.useState([]);
 
   const generateData = () => {
     const generated = [];
@@ -75,7 +78,7 @@ export default function BasicDateRangePicker() {
         /*from*/  faker.internet.email(),
         /*to*/    faker.internet.email(),
         /*subj*/  faker.fake("{{lorem.sentence}}"),
-        /*date*/  faker.fake("{{date.recent}}"),
+        /*date*/  (i % 2) ? moment(faker.fake("{{date.recent}}")).format('YYYY-MM-DD') : moment(faker.fake("{{date.past}}")).format('YYYY-MM-DD'),
         /*body*/  faker.fake("{{lorem.text}}"),
         /*attach*/Math.floor(Math.random() * 3)
       ));
@@ -88,7 +91,20 @@ export default function BasicDateRangePicker() {
   const handleDataRangeChange = (dates) => {
     setDateChange(dates);
 
-    console.log('changed dates ', dates);
+    const dateOne = moment(dates[0]).format('YYYY-MM-DD');
+    const dateTwo = moment(dates[1]).format('YYYY-MM-DD');
+
+    //console.log(`${dateOne} date one, date two ${dateTwo}`);
+
+    const mailsInDataRange = data.filter(mail => {
+      let mailDate = mail.date;
+
+      return moment(mailDate).isBetween(dateOne, dateTwo)
+      }
+    );
+
+    // console.log('mails in date RANGE ', mailsInDataRange);
+    setFilteredData(mailsInDataRange);
   };
 
   //console.log(faker.fake("{{name.lastName}}, {{name.firstName}} {{name.suffix}}"));
@@ -118,7 +134,7 @@ export default function BasicDateRangePicker() {
 
                 className={classes.textBox}
                 variant={"outlined"}
-                value={`${startProps.value} - ${endProps.value}`}
+                value={`${moment(startProps.value).format('YYYY/MM/DD')} - ${moment(endProps.value).format('YYYY/MM/DD')}`}
                 id="input-with-icon-textfield"
                 // label={label}
                 InputProps={{
@@ -160,7 +176,7 @@ export default function BasicDateRangePicker() {
 
       <div>
         <p style={styles.paragraph}>
-          Results: {data.length} mail(s)
+          Results: {(dataFilteredByDate.length) ? dataFilteredByDate.length : data.length} mail(s)
         </p>
 
         <Divider style={{ margin: 25 }} />
@@ -176,7 +192,7 @@ export default function BasicDateRangePicker() {
                 { title: '', field: 'attachment' },
                 { title: 'Date', field: 'date' },
               ]}
-              data={data}
+              data={dataFilteredByDate}
               title="Detail Panel With RowClick Preview"
               detailPanel={rowData => {
                 return (
